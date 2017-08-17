@@ -12,15 +12,16 @@ setwd("C:/Users/jagil/Documents/School/699/Herring Data/Source Files/")
 #        times - times at which to compute model predictions
 logisModel <- function( r=0.05, Binit=100, B0=1000, 
                         proc_errors=vector("numeric", length = times),
-                        times=1:49 )  ##SHOULD  THE  PROC_ERRORS GO HERE OR BE IT'S OWN OBJECT BELOW?
+                        times=1:66 )  ##SHOULD  THE  PROC_ERRORS GO HERE OR BE IT'S OWN OBJECT BELOW?
 { 
   # a. create vector B to hold predicted values
   B <- vector("numeric",length=length(times))
+  
   # b. initialize first B with observed value (stored globally)
   B[1] <- Binit
   
   # c. for loop to compute each subsequent B value from previous
-  #    in exponential growth formula B(t+1) = B(t)e^(r)
+  #    in logistic growth formula B(t+1) = B(t-1) + r* B(t-1) * (1-B(t-1)/B0)
   for( t in 2:length(times) )
   {
     B[t] <- B[t-1] + r*B[t-1]*( 1.-B[t-1]/B0 )
@@ -33,7 +34,7 @@ logisModel <- function( r=0.05, Binit=100, B0=1000,
 
 # 2. Create a goodness-of-fit function based on two arguments: par, ...
 #        goodFit - function to get goodness of fit given par and whatever else... 
-#            par - parametetr to be estimated 
+#            par - parameter to be estimated 
 #       observed - vector of observed values
 #           ...  - arguments passed through to other functions
 goodFit <- function( par, observed )
@@ -63,13 +64,15 @@ goodFit <- function( par, observed )
   # return negative log-likelihood
   return( logL )
 }
+
 #----------------------------------------------------
-# this will load the predators time series
+# this will load the herring time series
 herring        <- read.csv("Biomass_all.csv") 
-names(herring) <- c("Year", 1:49)
+herring        <- herring[,-1]
+names(herring) <- c(1:49)
 
 
-# extract 1 time-series of observed values
+# extract 1 time-series of observed values ##I DON"T THINK I NEED THIS PART
 stock1    <- "1"
 rInterval <- c(0.005,0.2)
 observed  <- herring[[stock1]]
@@ -84,11 +87,15 @@ optR <- optim( par=log(c(0.07,4000,35000)),
                observed=observed,
                control=list(maxit=200,fnscale=1),
                hessian=TRUE 
-)
-cat( "The objective function is: ",    optR$value, "\n")
+              )
+
+
+cat( "The objective function is: ",    optR$value, "\n")  ##WHAT DOES THE OBJECTIVE FUNCTION MEAN???
 cat( "The estimated growth rate is: ", exp(optR$par[1]), "\n")
 cat( "The Binit is: ",                    exp(optR$par[2]), "\n")
 cat( "The B0 is: ",     exp(optR$par[3])      )
+
+
 
 # make plot of the fit, starting with observed values
 maxObserved <- max( observed, na.rm=TRUE )
@@ -100,28 +107,28 @@ predicted   <- logisModel( r=exp(optR$par[1]),
 maxModel    <- max( predicted )
 yMax        <- max( c(maxObserved,maxModel) )
 
-plot( x=1951+c(1:49), y=observed, type="p",
+plot( x=1951+c(1:66), y=observed, type="p",
       ylim=c(0,1.2*yMax),
-      ylab=paste(stock1," abundance",sep=""),
+      ylab=paste("Abundance (mt)",sep=""),
       xlab="Year",
       las=1 )
 
-lines( x=1951+c(1:49), y=predicted, col="blue" )
+lines( x=1951+c(1:66), y=predicted, col="blue" )
 
 
 
 ############
 #After first trial run, it worked... sort of... 
 #Here is the output:
-# "The objective function is:  15.89995 
-#The estimated growth rate is:  0.1094032 
-#The Binit is:  18973.78 
-#The B0 is:  4479.555
-#Error in xy.coords(x, y, xlabel, ylabel, log) : 
-#  'x' and 'y' lengths differ
-#In addition: Warning messages:
-# 1: In log(Nmodel[idx]) : NaNs produced
-# 2: In log(Nmodel[idx]) : NaNs produced"
+  # "The objective function is:  15.89995 
+  #The estimated growth rate is:  0.1094032 
+  #The Binit is:  18973.78 
+  #The B0 is:  4479.555
+  #Error in xy.coords(x, y, xlabel, ylabel, log) : 
+  #  'x' and 'y' lengths differ
+  #In addition: Warning messages:
+  # 1: In log(Nmodel[idx]) : NaNs produced
+  # 2: In log(Nmodel[idx]) : NaNs produced"
 #
 ##Had some errors with graphics, and log model.  NaNs produced=prolly because there's missing
 ##numbers in there? 
@@ -130,3 +137,6 @@ lines( x=1951+c(1:49), y=predicted, col="blue" )
 
 
 
+
+##I think what the problem is is that there is a loop at the beginning (in logisModel), but there
+##isn't one in the second part where I actually optimize the model.  I thinkkkkk???

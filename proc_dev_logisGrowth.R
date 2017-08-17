@@ -43,7 +43,7 @@ goodFit <- function( par, observed )
   # back-transform the parameters
   tmp    <- exp( par )
   # a. get predicted values for time-series from expModel() <---- IS THIS SOMETHING I NEED????
-  Nmodel <- logisModel( r=tmp[1], Binit=tmp[2], B0=tmp[3] )
+  Nmodel <- logisModel( r=tmp[1], Binit=tmp[2], B0=tmp[3], proc_errors=tmp[4] )
   
   # b. compute log-residual function, residuals
   idx    <- !is.na(observed)
@@ -90,10 +90,11 @@ optR <- optim( par=log(c(0.07,4000,35000)),
               )
 
 
-cat( "The objective function is: ",    optR$value, "\n")  ##WHAT DOES THE OBJECTIVE FUNCTION MEAN???
+cat( "The objective function is: ",    optR$value      , "\n")  ##WHAT DOES THE OBJECTIVE FUNCTION MEAN???
 cat( "The estimated growth rate is: ", exp(optR$par[1]), "\n")
-cat( "The Binit is: ",                    exp(optR$par[2]), "\n")
-cat( "The B0 is: ",     exp(optR$par[3])      )
+cat( "The Binit is: ",                 exp(optR$par[2]), "\n")
+cat( "The B0 is: ",                    exp(optR$par[3]), "\n")
+cat( "The Process Error is: ",         exp(optR$par[4]) )
 
 
 
@@ -102,7 +103,9 @@ maxObserved <- max( observed, na.rm=TRUE )
 # predicted values
 predicted   <- logisModel( r=exp(optR$par[1]),
                            Binit=exp(optR$par[2]),
-                           B0 = exp(optR$par[3]) 
+                           B0 = exp(optR$par[3],
+                           proc_errors = exp(optR$par[4])
+                          ) 
 )
 maxModel    <- max( predicted )
 yMax        <- max( c(maxObserved,maxModel) )
